@@ -1,0 +1,531 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz Master</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+* { box-sizing: border-box; }
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #667eea, #764ba2, #a855f7);
+  background-attachment: fixed;
+}
+.brand { color: white; text-align: center; padding: 25px 0 15px; }
+.panel {
+  background: white;
+  border-radius: 22px;
+  padding: 30px;
+  box-shadow: 0 15px 45px #21134c45;
+}
+.gradient-btn {
+  color: white;
+  background: linear-gradient(100deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 20px;
+  transition: .2s;
+}
+.gradient-btn:hover { color: white; opacity: .9; transform: translateY(-1px); }
+.option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: white;
+  border: 2px solid #e5e7eb;
+  padding: 14px;
+  border-radius: 12px;
+  margin: 10px 0;
+  transition: .2s;
+}
+.option:hover { border-color: #8b5cf6; background: #f5f3ff; }
+.option.chosen { border-color: #764ba2; background: #f0eaff; }
+.nav-question {
+  width: 42px;
+  height: 42px;
+  margin: 4px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: white;
+}
+.nav-question.answered { background: #d1fae5; border-color: #10b981; }
+.nav-question.current { background: #764ba2; color: white; }
+.timer { font-size: 23px; font-weight: bold; color: #764ba2; }
+.screen { display: none; }
+.screen.active { display: block; }
+.result-card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; margin: 14px 0; }
+</style>
+</head>
+<body>
+<div class="container pb-5">
+  <header class="brand">
+    <h1 class="fw-bold">🎓 Quiz Master</h1>
+    <p>Challenge your knowledge. Track your progress.</p>
+  </header>
+
+  <!-- Welcome -->
+  <section id="welcome" class="screen active">
+    <div class="panel mx-auto text-center" style="max-width:650px">
+      <div style="font-size:65px">🧠</div>
+      <h2 class="fw-bold">Welcome to Quiz Master!</h2>
+      <p class="text-secondary">Choose your role to get started</p>
+      <div class="row g-3 mt-3">
+        <div class="col-md-6">
+          <div class="border rounded-4 p-4 h-100">
+            <div style="font-size:48px">👩‍🎓</div>
+            <h4>Student</h4>
+            <p class="text-secondary">Take an exam and view your result.</p>
+            <button class="gradient-btn w-100" onclick="openStudent()">Start as Student</button>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="border rounded-4 p-4 h-100">
+            <div style="font-size:48px">🧑‍💻</div>
+            <h4>Admin</h4>
+            <p class="text-secondary">Create and manage quiz exams.</p>
+            <button class="gradient-btn w-100" onclick="openAdmin()">Admin Panel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Admin -->
+  <section id="admin" class="screen">
+    <div class="panel mx-auto" style="max-width:750px">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">⚙️ Create an Exam</h2>
+        <button class="btn btn-outline-secondary" onclick="home()">Home</button>
+      </div>
+
+      <label class="form-label fw-semibold">Exam title</label>
+      <input id="examTitle" class="form-control mb-3" placeholder="e.g. Python Basics">
+
+      <label class="form-label fw-semibold">Time limit per question (seconds)</label>
+      <input id="timeLimit" class="form-control mb-4" type="number" min="5" value="20">
+
+      <hr>
+      <h5 class="fw-bold">Add a question</h5>
+      <label class="form-label">Question</label>
+      <textarea id="questionText" class="form-control mb-3" rows="2" placeholder="Enter question"></textarea>
+
+      <div class="row g-2">
+        <div class="col-md-6"><input id="opt0" class="form-control" placeholder="Option 1"></div>
+        <div class="col-md-6"><input id="opt1" class="form-control" placeholder="Option 2"></div>
+        <div class="col-md-6"><input id="opt2" class="form-control" placeholder="Option 3"></div>
+        <div class="col-md-6"><input id="opt3" class="form-control" placeholder="Option 4"></div>
+      </div>
+
+      <label class="form-label fw-semibold mt-3">Correct answer</label>
+      <select id="correct" class="form-select mb-3">
+        <option value="0">Option 1</option>
+        <option value="1">Option 2</option>
+        <option value="2">Option 3</option>
+        <option value="3">Option 4</option>
+      </select>
+
+      <label class="form-label">Answer explanation</label>
+      <textarea id="explanation" class="form-control mb-3" rows="2" placeholder="Explain the correct answer"></textarea>
+
+      <button class="gradient-btn w-100" onclick="addQuestion()">+ Add Question</button>
+      <div class="mt-4">
+        <h6>Questions added: <span id="count">0</span></h6>
+        <ol id="questionList" class="text-secondary"></ol>
+      </div>
+      <button class="gradient-btn w-100 mt-3" onclick="saveExam()">Save Exam</button>
+      <p id="adminMessage" class="mt-3 mb-0" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- Student -->
+  <section id="student" class="screen">
+    <div class="panel mx-auto" style="max-width:600px">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">👩‍🎓 Student Portal</h2>
+        <button class="btn btn-outline-secondary" onclick="home()">Home</button>
+      </div>
+      <label class="form-label fw-semibold">Student name</label>
+      <input id="studentName" class="form-control mb-3" placeholder="Enter your name">
+      <label class="form-label fw-semibold">Select exam</label>
+      <select id="examSelect" class="form-select mb-3"></select>
+      <button class="gradient-btn w-100" onclick="startExam()">🚀 Start Exam</button>
+      <p id="studentMessage" class="text-danger mt-3 mb-0"></p>
+    </div>
+  </section>
+
+  <!-- Exam -->
+  <section id="exam" class="screen">
+    <div class="panel mx-auto" style="max-width:800px">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+          <h3 id="examHeading" class="fw-bold mb-1"></h3>
+          <p id="studentHeading" class="text-secondary mb-0"></p>
+        </div>
+        <div class="text-center">
+          <small class="text-secondary d-block">Countdown</small>
+          <span id="timer" class="timer" aria-live="polite">20s</span>
+        </div>
+      </div>
+
+      <div class="progress my-4" style="height:8px">
+        <div id="progress" class="progress-bar" style="background:#764ba2"></div>
+      </div>
+
+      <div class="d-flex justify-content-between text-secondary mb-2">
+        <span id="qNumber"></span>
+        <span id="answered"></span>
+      </div>
+      <h4 id="qText" class="fw-bold mb-4"></h4>
+      <div id="options"></div>
+
+      <div class="mt-4">
+        <h6 class="fw-semibold">Question navigation</h6>
+        <div id="nav"></div>
+        <small class="text-secondary">Green = answered | Purple = current question</small>
+      </div>
+
+      <div class="d-flex justify-content-between gap-2 mt-4">
+        <button class="btn btn-outline-secondary" onclick="previousQuestion()">← Previous</button>
+        <button class="gradient-btn" onclick="nextQuestion()">Next →</button>
+      </div>
+      <button class="btn btn-danger w-100 mt-3" onclick="submitExam()">Submit Exam</button>
+    </div>
+  </section>
+
+  <!-- Result -->
+  <section id="result" class="screen">
+    <div class="panel mx-auto" style="max-width:800px">
+      <div class="text-center">
+        <div style="font-size:60px">🏆</div>
+        <h2 class="fw-bold">Exam Completed!</h2>
+        <p id="resultName" class="text-secondary"></p>
+        <h1 id="marks" class="fw-bold" style="color:#764ba2"></h1>
+        <p id="percent" class="text-secondary"></p>
+      </div>
+      <hr>
+      <h4 class="fw-bold">Answer Review</h4>
+      <div id="review"></div>
+      <button class="gradient-btn w-100 mt-3" onclick="home()">Back to Home</button>
+    </div>
+  </section>
+</div>
+
+<script>
+"use strict";
+
+const KEY = "quiz_master_exam_data";
+const $ = id => document.getElementById(id);
+
+let exams = readExams();
+let draft = [];
+let activeExam = null;
+let student = "";
+let answers = [];
+let current = 0;
+let secondsLeft = 20;
+let intervalId = null;
+let submitted = false;
+
+function readExams() {
+  try {
+    const data = JSON.parse(localStorage.getItem(KEY) || "[]");
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function show(id) {
+  document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
+  $(id).classList.add("active");
+}
+
+function home() {
+  clearInterval(intervalId);
+  intervalId = null;
+  show("welcome");
+}
+
+// ADMIN FUNCTIONS
+function openAdmin() {
+  draft = [];
+  $("examTitle").value = "";
+  $("timeLimit").value = "20";
+  $("questionText").value = "";
+  $("explanation").value = "";
+  for (let i = 0; i < 4; i++) $("opt" + i).value = "";
+  $("adminMessage").textContent = "";
+  updateList();
+  show("admin");
+}
+
+function updateList() {
+  $("count").textContent = draft.length;
+  $("questionList").replaceChildren();
+  draft.forEach(q => {
+    const li = document.createElement("li");
+    li.textContent = q.question;
+    $("questionList").appendChild(li);
+  });
+}
+
+function addQuestion() {
+  const question = $("questionText").value.trim();
+  const options = [0, 1, 2, 3].map(i => $("opt" + i).value.trim());
+  const correct = Number($("correct").value);
+  const explanation = $("explanation").value.trim();
+
+  if (!question || options.some(o => !o)) {
+    alert("Please enter a question and all four options.");
+    return;
+  }
+
+  draft.push({ question, options, correct, explanation });
+  $("questionText").value = "";
+  $("explanation").value = "";
+  for (let i = 0; i < 4; i++) $("opt" + i).value = "";
+  updateList();
+}
+
+function saveExam() {
+  const title = $("examTitle").value.trim();
+  const seconds = Number($("timeLimit").value);
+
+  if (!title) {
+    $("adminMessage").textContent = "Please enter an exam title.";
+    return;
+  }
+  if (!Number.isInteger(seconds) || seconds < 5) {
+    $("adminMessage").textContent = "Time limit must be at least 5 seconds.";
+    return;
+  }
+  if (draft.length === 0) {
+    $("adminMessage").textContent = "Please add at least one question.";
+    return;
+  }
+
+  exams = readExams();
+  exams.push({
+    id: Date.now(),
+    title,
+    seconds,
+    questions: draft.map(q => ({
+      question: q.question,
+      options: [...q.options],
+      correct: q.correct,
+      explanation: q.explanation
+    }))
+  });
+
+  try {
+    localStorage.setItem(KEY, JSON.stringify(exams));
+    $("adminMessage").innerHTML = '<span class="text-success fw-bold">Exam saved successfully! Students can now select it.</span>';
+  } catch (e) {
+    exams.pop();
+    $("adminMessage").textContent = "Unable to save. Browser storage may be full.";
+  }
+}
+
+// STUDENT FUNCTIONS
+function openStudent() {
+  exams = readExams();
+  $("studentName").value = "";
+  $("studentMessage").textContent = "";
+  $("examSelect").replaceChildren();
+
+  if (exams.length === 0) {
+    $("examSelect").add(new Option("No exams available", ""));
+  } else {
+    exams.forEach((exam, i) => {
+      $("examSelect").add(new Option(exam.title, String(i)));
+    });
+  }
+  show("student");
+}
+
+function startExam() {
+  student = $("studentName").value.trim();
+  const index = $("examSelect").value;
+  exams = readExams();
+
+  if (!student) {
+    $("studentMessage").textContent = "Please enter your name.";
+    return;
+  }
+  if (index === "" || !exams[Number(index)]) {
+    $("studentMessage").textContent = "Please select an available exam.";
+    return;
+  }
+
+  activeExam = exams[Number(index)];
+  if (!activeExam.questions || activeExam.questions.length === 0) {
+    $("studentMessage").textContent = "This exam has no questions.";
+    return;
+  }
+
+  answers = Array(activeExam.questions.length).fill(null);
+  current = 0;
+  submitted = false;
+  $("examHeading").textContent = activeExam.title;
+  $("studentHeading").textContent = "Student: " + student;
+  show("exam");
+  displayQuestion();
+}
+
+// QUESTION DISPLAY AND TIMER
+function displayQuestion() {
+  clearInterval(intervalId);
+  intervalId = null;
+  if (submitted || !activeExam) return;
+
+  const q = activeExam.questions[current];
+  $("qNumber").textContent =
+    "Question " + (current + 1) + " of " + activeExam.questions.length;
+  $("qText").textContent = q.question;
+  $("answered").textContent =
+    answers.filter(a => a !== null).length + " answered";
+  $("progress").style.width =
+    ((current + 1) / activeExam.questions.length * 100) + "%";
+
+  const area = $("options");
+  area.replaceChildren();
+
+  q.options.forEach((text, i) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "option" + (answers[current] === i ? " chosen" : "");
+    button.textContent = String.fromCharCode(65 + i) + ". " + text;
+    button.addEventListener("click", () => {
+      answers[current] = i;
+      displayQuestion();
+    });
+    area.appendChild(button);
+  });
+
+  renderNavigation();
+  secondsLeft = activeExam.seconds;
+  updateTimer();
+
+  intervalId = setInterval(() => {
+    secondsLeft--;
+    updateTimer();
+
+    if (secondsLeft <= 0) {
+      clearInterval(intervalId);
+      intervalId = null;
+      if (current < activeExam.questions.length - 1) {
+        current++;
+        displayQuestion();
+      } else {
+        finishExam();
+      }
+    }
+  }, 1000);
+}
+
+function updateTimer() {
+  $("timer").textContent = secondsLeft + "s";
+  $("timer").style.color = secondsLeft <= 5 ? "#dc2626" : "#764ba2";
+}
+
+function renderNavigation() {
+  const nav = $("nav");
+  nav.replaceChildren();
+
+  answers.forEach((answer, i) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "nav-question";
+    if (answer !== null) button.classList.add("answered");
+    if (i === current) button.classList.add("current");
+    button.textContent = i + 1;
+    button.title = "Go to question " + (i + 1);
+    button.addEventListener("click", () => {
+      current = i;
+      displayQuestion();
+    });
+    nav.appendChild(button);
+  });
+}
+
+function previousQuestion() {
+  if (current > 0 && !submitted) {
+    current--;
+    displayQuestion();
+  }
+}
+
+function nextQuestion() {
+  if (current < activeExam.questions.length - 1 && !submitted) {
+    current++;
+    displayQuestion();
+  }
+}
+
+function submitExam() {
+  if (submitted) return;
+  if (confirm("Are you sure you want to submit your exam?")) {
+    finishExam();
+  }
+}
+
+// RESULTS
+function finishExam() {
+  if (submitted) return;
+  submitted = true;
+  clearInterval(intervalId);
+  intervalId = null;
+
+  const qs = activeExam.questions;
+  let score = 0;
+  qs.forEach((q, i) => {
+    if (answers[i] === q.correct) score++;
+  });
+
+  $("resultName").textContent = "Student: " + student;
+  $("marks").textContent = score + " / " + qs.length;
+  $("percent").textContent =
+    "Percentage: " + (score / qs.length * 100).toFixed(1) + "%";
+
+  const review = $("review");
+  review.replaceChildren();
+
+  qs.forEach((q, i) => {
+    const correct = answers[i] === q.correct;
+    const card = document.createElement("div");
+    card.className = "result-card";
+
+    const heading = document.createElement("h6");
+    heading.className = "fw-bold";
+    heading.textContent = (i + 1) + ". " + q.question;
+
+    const status = document.createElement("p");
+    status.className = correct ? "text-success fw-semibold" : "text-danger fw-semibold";
+    status.textContent = correct ? "✓ Correct" : "✗ Incorrect";
+
+    const chosen = document.createElement("p");
+    chosen.textContent = "Your answer: " +
+      (answers[i] === null ? "Not answered" : q.options[answers[i]]);
+
+    const right = document.createElement("p");
+    right.className = "text-success";
+    right.textContent = "Correct answer: " + q.options[q.correct];
+
+    const explanation = document.createElement("p");
+    explanation.className = "text-secondary mb-0";
+    explanation.textContent = "Explanation: " +
+      (q.explanation || "The correct answer is " + q.options[q.correct] + ".");
+
+    card.append(heading, status, chosen, right, explanation);
+    review.appendChild(card);
+  });
+
+  show("result");
+}
+</script>
+</body>
+</html>
